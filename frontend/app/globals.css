@@ -1,0 +1,43 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * { border-color: theme(colors.border); }
+  html, body {
+    background-color: theme(colors.background);
+    color: theme(colors.foreground);
+    font-family: theme(fontFamily.sans);
+    -webkit-font-smoothing: antialiased;
+  }
+  body {
+    background-image:
+      radial-gradient(circle at 20% 0%, oklch(0.28 0.05 250 / 0.5), transparent 50%),
+      radial-gradient(circle at 80% 100%, oklch(0.28 0.05 195 / 0.25), transparent 50%);
+    background-attachment: fixed;
+    min-height: 100vh;
+  }
+}
+
+@layer utilities {
+  .grid-bg {
+    background-image:
+      linear-gradient(oklch(1 0 0 / 0.03) 1px, transparent 1px),
+      linear-gradient(90deg, oklch(1 0 0 / 0.03) 1px, transparent 1px);
+    background-size: 32px 32px;
+  }
+  .panel-surface {
+    background: linear-gradient(180deg, theme(colors.panel), theme(colors.card));
+    border: 1px solid theme(colors.border);
+    border-radius: theme(borderRadius.lg);
+  }
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 0.4; transform: scale(0.9); }
+  50% { opacity: 1; transform: scale(1); }
+}
+@keyframes typing-bounce {
+  0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+  30% { transform: translateY(-4px); opacity: 1; }
+}
