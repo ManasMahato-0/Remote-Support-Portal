@@ -19,6 +19,7 @@ export type JobState = {
   chats: { scoping: ChatMessage[]; qa: ChatMessage[] };
   scopingScriptIndex: number;
   qaScriptIndex: number;
+  docRecorded: boolean;
   activityDeadline: number | null;
   finishedAt: number | null;
 };
@@ -34,6 +35,7 @@ export const initialState: JobState = {
   chats: { scoping: [], qa: [] },
   scopingScriptIndex: 0,
   qaScriptIndex: 0,
+  docRecorded: false,
   activityDeadline: null,
   finishedAt: null,
 };

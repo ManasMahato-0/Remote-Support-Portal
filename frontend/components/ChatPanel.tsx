@@ -82,7 +82,7 @@ export function ChatPanel({
             onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }}
             rows={1}
             placeholder="Type an update for the expert…"
-            className="min-h-[40px] max-h-32 flex-1 resize-none rounded-md border border-input bg-background/40 px-3 py-2 text-sm placeholder:text-muted-foreground focus:border-primary focus:outline-none"
+            className="min-h-[40px] max-h-32 flex-1 resize-none rounded-md border border-input bg-background/40 px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
           />
           <button
             type="button"

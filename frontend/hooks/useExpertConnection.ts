@@ -33,6 +33,7 @@ export function useExpertConnection(opts: {
   const [connected, setConnected] = useState(false);
   const wsRef = useRef<WebSocket | null>(null);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const replyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const cbRef = useRef(onExpertMessage);
   cbRef.current = onExpertMessage;
 
@@ -48,6 +49,7 @@ export function useExpertConnection(opts: {
         try {
           const data = JSON.parse(ev.data);
           if (data.type === "expert_message") {
+            if (replyTimeoutRef.current) { clearTimeout(replyTimeoutRef.current); replyTimeoutRef.current = null; }
             setTyping(false);
             const msg: ChatMessage = { id: uid(), role: "expert", text: data.text, ts: data.ts ?? Date.now() };
             cbRef.current(msg);
@@ -60,6 +62,7 @@ export function useExpertConnection(opts: {
     const localTimers = timers.current;
     return () => {
       localTimers.forEach(clearTimeout);
+      if (replyTimeoutRef.current) clearTimeout(replyTimeoutRef.current);
       ws?.close();
     };
   }, [speakOut]);
@@ -81,11 +84,20 @@ export function useExpertConnection(opts: {
   }, [emitExpert]);
 
   // Handle a user message: prefer live WS, fall back to scripted reply.
+  // If the socket accepts the send but no reply arrives in 12s (backend died
+  // mid-flight), clear typing and emit the scripted fallback so the chat
+  // never deadlocks.
   const sendUserTurn = useCallback((userText: string) => {
     const ws = wsRef.current;
     if (ws && ws.readyState === WebSocket.OPEN) {
       setTyping(true);
       ws.send(JSON.stringify({ type: "user_message", phase, text: userText, equipment, severity }));
+      if (replyTimeoutRef.current) clearTimeout(replyTimeoutRef.current);
+      replyTimeoutRef.current = setTimeout(() => {
+        replyTimeoutRef.current = null;
+        setTyping(false);
+        emitExpert(fallbackReply(userText));
+      }, 12_000);
     } else {
       emitExpert(fallbackReply(userText));
     }

@@ -1,5 +1,6 @@
 "use client";
-import { lazy, Suspense, useEffect } from "react";
+import dynamic from "next/dynamic";
+import { Suspense, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Clock, ArrowRight } from "lucide-react";
 import { ProgressSteps } from "@/components/ProgressSteps";
@@ -8,16 +9,6 @@ import { formatTime, useDeadlineCountdown } from "@/components/Timer";
 import { useJobState } from "@/hooks/useJobState";
 import { EQUIPMENT_LABEL, SEVERITY_LABEL, type TabKey } from "@/lib/jobState";
 import { saveProgress, finalizeJob } from "@/app/actions";
-
-const ScopingTab = lazy(() => import("@/components/tabs/ScopingTab"));
-const DocumentationTab = lazy(() => import("@/components/tabs/DocumentationTab"));
-const QATab = lazy(() => import("@/components/tabs/QATab"));
-
-const NEXT_TAB: Record<TabKey, TabKey | null> = {
-  scoping: "documentation",
-  documentation: "qa",
-  qa: null,
-};
 
 function TabSkeleton() {
   return (
@@ -28,9 +19,29 @@ function TabSkeleton() {
   );
 }
 
+const ScopingTab = dynamic(() => import("@/components/tabs/ScopingTab"), {
+  ssr: false,
+  loading: () => <TabSkeleton />,
+});
+const DocumentationTab = dynamic(() => import("@/components/tabs/DocumentationTab"), {
+  ssr: false,
+  loading: () => <TabSkeleton />,
+});
+const QATab = dynamic(() => import("@/components/tabs/QATab"), {
+  ssr: false,
+  loading: () => <TabSkeleton />,
+});
+
+const NEXT_TAB: Record<TabKey, TabKey | null> = {
+  scoping: "documentation",
+  documentation: "qa",
+  qa: null,
+};
+
 export default function ActivityPage() {
   const { state, update, hydrated } = useJobState();
   const router = useRouter();
+  const finishedRef = useRef(false);
 
   useEffect(() => {
     if (!hydrated) return;
@@ -39,6 +50,8 @@ export default function ActivityPage() {
   }, [hydrated, state.equipment, state.severity, state.prepDone, router]);
 
   const finishJob = async () => {
+    if (finishedRef.current) return;
+    finishedRef.current = true;
     update((s) => ({
       ...s,
       completedTabs: Array.from(new Set([...s.completedTabs, "qa" as TabKey])),
@@ -60,6 +73,7 @@ export default function ActivityPage() {
   const completeCurrent = async () => {
     const next = NEXT_TAB[state.activeTab];
     if (!next) { finishJob(); return; }
+    if (state.activeTab === "documentation" && !state.docRecorded) return;
     const newCompleted = Array.from(new Set([...state.completedTabs, state.activeTab]));
     update((s) => ({ ...s, completedTabs: newCompleted, activeTab: next }));
     await saveProgress({ tab: next, completedTabs: newCompleted, timestamp: Date.now() });
@@ -68,6 +82,8 @@ export default function ActivityPage() {
   const setTab = (k: TabKey) => {
     if (state.completedTabs.includes(k) || k === state.activeTab) update({ activeTab: k });
   };
+
+  const markRecorded = () => update({ docRecorded: true });
 
   if (!hydrated || !state.equipment || !state.severity || !state.prepDone) {
     return (
@@ -78,6 +94,7 @@ export default function ActivityPage() {
   }
 
   const timerTone = remaining <= 60 ? "text-destructive" : remaining <= 180 ? "text-primary" : "text-foreground";
+  const nextDisabled = state.activeTab === "documentation" && !state.docRecorded;
 
   return (
     <main className="mx-auto max-w-7xl px-4 sm:px-6 py-6">
@@ -108,15 +125,18 @@ export default function ActivityPage() {
       <div className="mt-6">
         <Suspense fallback={<TabSkeleton />}>
           {state.activeTab === "scoping" && <ScopingTab state={state} update={update} />}
-          {state.activeTab === "documentation" && <DocumentationTab />}
+          {state.activeTab === "documentation" && <DocumentationTab onRecorded={markRecorded} />}
           {state.activeTab === "qa" && <QATab state={state} update={update} onFinish={finishJob} />}
         </Suspense>
       </div>
 
       {state.activeTab !== "qa" && (
-        <div className="mt-6 flex justify-end">
-          <button type="button" onClick={completeCurrent}
-            className="inline-flex items-center gap-2 rounded-md bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90">
+        <div className="mt-6 flex items-center justify-end gap-3">
+          {nextDisabled && (
+            <span className="text-xs text-muted-foreground">Record and stop capture before advancing.</span>
+          )}
+          <button type="button" onClick={completeCurrent} disabled={nextDisabled}
+            className="inline-flex items-center gap-2 rounded-md bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-40">
             Completed · Next Tab <ArrowRight className="h-4 w-4" />
           </button>
         </div>

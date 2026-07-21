@@ -3,7 +3,7 @@ import { useCallback, useState } from "react";
 import { WebcamPreview } from "@/components/WebcamPreview";
 import { RecorderControls } from "@/components/RecorderControls";
 
-export default function DocumentationTab() {
+export default function DocumentationTab({ onRecorded }: { onRecorded?: () => void }) {
   const [stream, setStream] = useState<MediaStream | null>(null);
   const onStream = useCallback((s: MediaStream | null) => setStream(s), []);
 
@@ -28,7 +28,7 @@ export default function DocumentationTab() {
             Audio + video recorded locally with MediaRecorder API. Play back before advancing.
           </p>
         </div>
-        <RecorderControls stream={stream} />
+        <RecorderControls stream={stream} onRecorded={onRecorded} />
       </div>
     </div>
   );

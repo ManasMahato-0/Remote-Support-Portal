@@ -4,7 +4,10 @@ import { Circle, Play, Square } from "lucide-react";
 
 type Status = "idle" | "recording" | "stopped";
 
-export function RecorderControls({ stream }: { stream: MediaStream | null }) {
+export function RecorderControls({ stream, onRecorded }: {
+  stream: MediaStream | null;
+  onRecorded?: () => void;
+}) {
   const [status, setStatus] = useState<Status>("idle");
   const [seconds, setSeconds] = useState(0);
   const [blobUrl, setBlobUrl] = useState<string | null>(null);
@@ -49,6 +52,7 @@ export function RecorderControls({ stream }: { stream: MediaStream | null }) {
         setBlobUrl(URL.createObjectURL(blob));
         setStatus("stopped");
         setUpload("idle");
+        onRecorded?.();
       };
       recorderRef.current = mr;
       mr.start();

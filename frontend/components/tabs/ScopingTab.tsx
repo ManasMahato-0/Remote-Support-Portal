@@ -51,7 +51,7 @@ export default function ScopingTab({ state, update }: {
           <div className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">Field notes</div>
           <textarea
             placeholder="Log observations, error codes, environmental conditions…"
-            className="mt-2 min-h-[120px] w-full resize-none rounded-md border border-input bg-background/40 px-3 py-2 text-sm placeholder:text-muted-foreground focus:border-primary focus:outline-none"
+            className="mt-2 min-h-[120px] w-full resize-none rounded-md border border-input bg-background/40 px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
           />
         </div>
       </div>
