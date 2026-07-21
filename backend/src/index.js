@@ -13,7 +13,7 @@ const app = express();
 const server = createServer(app);
 const wss = new WebSocketServer({ server });
 
-app.use(cors({ origin: "http://localhost:3000" }));
+app.use(cors({ origin: process.env.FRONTEND_ORIGIN ?? "http://localhost:3000" }));
 app.use(express.json());
 
 const upload = multer({ dest: join(__dirname, "../uploads/") });
